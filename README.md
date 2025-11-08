@@ -34,23 +34,31 @@ A modern, polished frontend for an AI-driven database RAG & analytics web applic
 # Install dependencies
 npm install
 
+# Set up Clerk Authentication (REQUIRED)
+# Follow the guide in CLERK_SETUP.md
+# Create a .env file with your Clerk Publishable Key
+
 # Start development server
 npm run dev
 ```
 
 The app will be available at `http://localhost:8080`
 
+⚠️ **Important**: The app requires Clerk authentication. If you haven't set it up yet, see [CLERK_SETUP.md](./CLERK_SETUP.md) for step-by-step instructions.
+
 ### Environment Variables
 
-Create a `.env` file in the root directory:
+**Required**: Create a `.env` file in the root directory:
 
 ```env
-# Clerk Authentication (when integrated)
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_key_here
+# Clerk Authentication (REQUIRED)
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_publishable_key_here
 
-# Backend API URL
+# Backend API URL (optional - for future integration)
 VITE_API_URL=http://localhost:8000
 ```
+
+**Important**: You MUST set up Clerk authentication to run this app. See [CLERK_SETUP.md](./CLERK_SETUP.md) for detailed instructions.
 
 ## Project Structure
 
@@ -92,17 +100,20 @@ The app uses a comprehensive design system defined in `src/index.css`:
 The frontend expects these backend endpoints:
 
 ### POST `/api/upload-sql`
+
 Upload SQL schema file
 
 **Request**: `multipart/form-data` with `file` field
 **Response**: `{ sessionId, tables, status, message }`
 
 ### GET `/api/schema/:sessionId`
+
 Get database schema details
 
 **Response**: `{ sessionId, tables: [{ name, columns, sampleRows, rowCount }] }`
 
 ### POST `/api/query/:sessionId`
+
 Execute natural language query
 
 **Request**: `{ query, topK? }`
@@ -123,7 +134,9 @@ The app currently uses mock data for development. To integrate with your backend
 - [x] Interactive schema viewer
 - [x] Natural language chat interface
 - [x] Result display with SQL, table, and charts
-- [ ] Clerk authentication integration
+- [x] Clerk authentication integration ✨ NEW
+- [x] Protected routes (workspace requires login) ✨ NEW
+- [x] User profile and sign out ✨ NEW
 - [ ] Backend API integration
 - [ ] Query history persistence
 - [ ] CSV/Excel export functionality

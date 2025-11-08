@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Database, Sparkles, BarChart3, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 
 const Landing = () => {
   return (
@@ -12,9 +13,22 @@ const Landing = () => {
             <Database className="h-6 w-6 text-primary" />
             <span className="text-xl font-semibold">DB RAG Analytics</span>
           </div>
-          <Link to="/workspace">
-            <Button variant="outline">Sign In</Button>
-          </Link>
+          <div className="flex items-center gap-3">
+            <SignedOut>
+              <Link to="/sign-in">
+                <Button variant="ghost">Sign In</Button>
+              </Link>
+              <Link to="/sign-up">
+                <Button>Get Started</Button>
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link to="/workspace">
+                <Button variant="outline">Go to Workspace</Button>
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+          </div>
         </div>
       </header>
 
@@ -38,11 +52,20 @@ const Landing = () => {
           </p>
 
           <div className="flex items-center justify-center gap-4 pt-4">
-            <Link to="/workspace">
-              <Button size="lg" className="text-lg px-8">
-                Get Started
-              </Button>
-            </Link>
+            <SignedOut>
+              <Link to="/sign-up">
+                <Button size="lg" className="text-lg px-8">
+                  Get Started
+                </Button>
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link to="/workspace">
+                <Button size="lg" className="text-lg px-8">
+                  Go to Workspace
+                </Button>
+              </Link>
+            </SignedIn>
             <Button size="lg" variant="outline" className="text-lg px-8">
               View Demo
             </Button>
@@ -92,11 +115,20 @@ const Landing = () => {
             <p className="text-lg text-muted-foreground">
               Upload your SQL schema and start asking questions in minutes.
             </p>
-            <Link to="/workspace">
-              <Button size="lg" className="text-lg px-8">
-                Launch App
-              </Button>
-            </Link>
+            <SignedOut>
+              <Link to="/sign-up">
+                <Button size="lg" className="text-lg px-8">
+                  Launch App
+                </Button>
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link to="/workspace">
+                <Button size="lg" className="text-lg px-8">
+                  Launch App
+                </Button>
+              </Link>
+            </SignedIn>
           </div>
         </div>
       </main>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Database } from "lucide-react";
+import { UserButton, useUser } from "@clerk/clerk-react";
 import LeftRail from "./LeftRail";
 import SchemaViewer from "./SchemaViewer";
 import ChatPane from "./ChatPane";
@@ -13,6 +14,7 @@ interface WorkspaceLayoutProps {
 const WorkspaceLayout = ({ sessionId }: WorkspaceLayoutProps) => {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
+  const { user } = useUser();
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -36,7 +38,13 @@ const WorkspaceLayout = ({ sessionId }: WorkspaceLayoutProps) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {user && (
+            <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Welcome, {user.firstName || user.username || 'User'}</span>
+            </div>
+          )}
+          
           <Sheet open={rightOpen} onOpenChange={setRightOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="md:hidden">
@@ -47,6 +55,15 @@ const WorkspaceLayout = ({ sessionId }: WorkspaceLayoutProps) => {
               <SchemaViewer sessionId={sessionId} />
             </SheetContent>
           </Sheet>
+
+          <UserButton 
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: "h-8 w-8"
+              }
+            }}
+          />
         </div>
       </header>
 
