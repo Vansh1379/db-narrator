@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { ChevronDown, Copy, Download, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ResultTable from "./ResultTable";
@@ -39,7 +43,7 @@ const ResultCard = ({ result }: ResultCardProps) => {
   };
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg animate-scale-in">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
@@ -47,7 +51,11 @@ const ResultCard = ({ result }: ResultCardProps) => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>Returned {result.rows.length} rows</span>
               <span>•</span>
-              <span>executed in 0.38s</span>
+              <span>
+                {result.executionTime !== undefined
+                  ? `executed in ${result.executionTime.toFixed(3)}s`
+                  : "execution time N/A"}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -67,14 +75,25 @@ const ResultCard = ({ result }: ResultCardProps) => {
           <div className="flex items-center justify-between">
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2">
-                {sqlOpen ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {sqlOpen ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
                 {sqlOpen ? "Hide SQL" : "Show SQL"}
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform ${sqlOpen ? "rotate-180" : ""}`}
+                  className={`h-4 w-4 transition-transform ${
+                    sqlOpen ? "rotate-180" : ""
+                  }`}
                 />
               </Button>
             </CollapsibleTrigger>
-            <Button variant="ghost" size="sm" onClick={handleCopySQL} className="gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCopySQL}
+              className="gap-2"
+            >
               <Copy className="h-4 w-4" />
               Copy SQL
             </Button>
@@ -94,7 +113,12 @@ const ResultCard = ({ result }: ResultCardProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold">Data Table</h4>
-              <Button variant="ghost" size="sm" onClick={handleExport} className="gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleExport}
+                className="gap-2"
+              >
                 <Download className="h-4 w-4" />
                 Export CSV
               </Button>

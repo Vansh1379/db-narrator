@@ -1,6 +1,7 @@
 import { SignIn } from "@clerk/clerk-react";
 import { Database } from "lucide-react";
 import { Link } from "react-router-dom";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const SignInPage = () => {
   return (
@@ -12,6 +13,7 @@ const SignInPage = () => {
             <Database className="h-6 w-6 text-primary" />
             <span className="text-xl font-semibold">DB RAG Analytics</span>
           </Link>
+          <ThemeToggle />
         </div>
       </header>
 
