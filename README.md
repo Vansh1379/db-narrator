@@ -1,73 +1,165 @@
-# Welcome to your Lovable project
+# DB RAG Analytics - AI-Powered Database Insights
 
-## Project info
+A modern, polished frontend for an AI-driven database RAG & analytics web application. Upload your SQL schema, ask questions in natural language, and get instant insights with auto-generated SQL queries, charts, and visualizations.
 
-**URL**: https://lovable.dev/projects/e2c859e9-e53b-4c10-8e3f-534166c990c2
+## Features
 
-## How can I edit this code?
+✨ **Natural Language Queries** - Ask questions about your database in plain English
+📊 **Auto-Generated Visualizations** - Charts and tables generated automatically from query results
+🎯 **Schema Explorer** - Interactive schema viewer with table details, columns, and sample data
+💾 **SQL Preview** - Review and edit generated SQL before execution
+🎨 **Modern UI** - Clean, developer-friendly interface with dark mode support
+📱 **Responsive Design** - Full mobile support with collapsible sidebars
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **React** + **TypeScript** - Modern UI framework with type safety
+- **Vite** - Lightning-fast build tool
+- **Tailwind CSS** - Utility-first styling with custom design system
+- **Recharts** - Beautiful, responsive charts
+- **Shadcn/ui** - High-quality, accessible UI components
+- **Clerk** - Authentication (to be integrated)
+- **React Router** - Client-side routing
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e2c859e9-e53b-4c10-8e3f-534166c990c2) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js 18+ and npm installed
+- (Optional) Clerk account for authentication
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```bash
+# Install dependencies
+npm install
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Environment Variables
 
-**Use GitHub Codespaces**
+Create a `.env` file in the root directory:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```env
+# Clerk Authentication (when integrated)
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_key_here
 
-## What technologies are used for this project?
+# Backend API URL
+VITE_API_URL=http://localhost:8000
+```
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
+src/
+├── components/
+│   ├── ui/                  # Shadcn UI components
+│   ├── upload/              # Upload SQL file components
+│   └── workspace/           # Main workspace components
+│       ├── WorkspaceLayout.tsx
+│       ├── LeftRail.tsx     # Session & history sidebar
+│       ├── SchemaViewer.tsx # Database schema explorer
+│       ├── ChatPane.tsx     # Query input & messages
+│       ├── ResultCard.tsx   # SQL + results display
+│       ├── ResultTable.tsx  # Data table with pagination
+│       └── ChartCard.tsx    # Interactive charts
+├── pages/
+│   ├── Landing.tsx          # Landing page
+│   ├── Workspace.tsx        # Main workspace page
+│   └── NotFound.tsx         # 404 page
+├── lib/
+│   └── utils.ts             # Utility functions
+└── index.css                # Design system & tokens
 
-## How can I deploy this project?
+```
 
-Simply open [Lovable](https://lovable.dev/projects/e2c859e9-e53b-4c10-8e3f-534166c990c2) and click on Share -> Publish.
+## Design System
 
-## Can I connect a custom domain to my Lovable project?
+The app uses a comprehensive design system defined in `src/index.css`:
 
-Yes, you can!
+- **Primary Color**: Teal (#0ea5a4) - Main brand color
+- **Accent Color**: Indigo (#6366f1) - Interactive elements
+- **Typography**: Inter for UI, JetBrains Mono for code
+- **Spacing**: Generous padding with rounded-2xl corners
+- **Dark Mode**: Full dark mode support with semantic tokens
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## API Integration
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+The frontend expects these backend endpoints:
+
+### POST `/api/upload-sql`
+Upload SQL schema file
+
+**Request**: `multipart/form-data` with `file` field
+**Response**: `{ sessionId, tables, status, message }`
+
+### GET `/api/schema/:sessionId`
+Get database schema details
+
+**Response**: `{ sessionId, tables: [{ name, columns, sampleRows, rowCount }] }`
+
+### POST `/api/query/:sessionId`
+Execute natural language query
+
+**Request**: `{ query, topK? }`
+**Response**: `{ sql, explanation, rows, chartData, sources, confidence }`
+
+## Mock Data
+
+The app currently uses mock data for development. To integrate with your backend:
+
+1. Update API calls in components (currently mocked)
+2. Add your backend URL to environment variables
+3. Implement proper error handling for API calls
+
+## Features Roadmap
+
+- [x] Landing page with features showcase
+- [x] SQL file upload with progress tracking
+- [x] Interactive schema viewer
+- [x] Natural language chat interface
+- [x] Result display with SQL, table, and charts
+- [ ] Clerk authentication integration
+- [ ] Backend API integration
+- [ ] Query history persistence
+- [ ] CSV/Excel export functionality
+- [ ] ER diagram visualization
+- [ ] Dark mode toggle
+- [ ] Advanced filtering and search
+
+## Development
+
+```bash
+# Run development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Lint code
+npm run lint
+```
+
+## Contributing
+
+This is a frontend implementation based on the provided specifications. To contribute:
+
+1. Follow the existing component structure
+2. Use the design system tokens (no hardcoded colors)
+3. Ensure TypeScript types are properly defined
+4. Test responsive behavior on mobile
+
+## License
+
+MIT License - feel free to use this project for your own applications.
+
+---
+
+**Built with ❤️ using Lovable**
