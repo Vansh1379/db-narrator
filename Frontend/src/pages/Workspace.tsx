@@ -5,10 +5,11 @@ import { useAuth } from "@clerk/clerk-react";
 import UploadSQLCard from "@/components/upload/UploadSQLCard";
 import WorkspaceLayout from "@/components/workspace/WorkspaceLayout";
 import DatabaseVisualizer from "@/components/workspace/DatabaseVisualizer";
-import { fetchSessions, deleteSession } from "@/lib/api";
+import { fetchSessions, deleteSession, fetchSchema } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
 const SESSION_STORAGE_KEY = "dbNarratorActiveSession";
+const SCHEMA_STORAGE_PREFIX = "dbNarratorSchema:";
 
 const Workspace = () => {
   const { sessionId: sessionIdParam } = useParams();
@@ -90,6 +91,7 @@ const Workspace = () => {
       localStorage.setItem(SESSION_STORAGE_KEY, newSessionId);
     }
     await queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    await queryClient.invalidateQueries({ queryKey: ["schema", newSessionId] });
   };
 
   const handleSelectSession = (nextSessionId: string) => {
@@ -113,6 +115,41 @@ const Workspace = () => {
 
   const sessions = sessionsData?.sessions ?? [];
   const sessionsLoadingState = isSessionsLoading || isSessionsFetching;
+  const {
+    data: schemaData,
+    isLoading: isSchemaLoading,
+    isFetching: isSchemaFetching,
+  } = useQuery({
+    queryKey: ["schema", activeSession],
+    enabled: Boolean(activeSession && typeof getToken === "function"),
+    queryFn: async () => {
+      if (!activeSession) return undefined;
+      const schema = await fetchSchema(getToken, activeSession);
+      if (typeof window !== "undefined") {
+        localStorage.setItem(
+          `${SCHEMA_STORAGE_PREFIX}${activeSession}`,
+          JSON.stringify(schema)
+        );
+      }
+      return schema;
+    },
+    initialData: () => {
+      if (!activeSession || typeof window === "undefined") return undefined;
+      const cached = localStorage.getItem(
+        `${SCHEMA_STORAGE_PREFIX}${activeSession}`
+      );
+      if (!cached) return undefined;
+      try {
+        return JSON.parse(cached);
+      } catch {
+        return undefined;
+      }
+    },
+    staleTime: 60_000,
+  });
+  const schemaTables = schemaData?.tables ?? [];
+  const schemaLoadingState = isSchemaLoading || isSchemaFetching;
+  const schemaInitialLoading = schemaLoadingState && schemaTables.length === 0;
 
   const handleDeleteSession = async (sessionToDelete: string) => {
     if (deletingSessionId) return;
@@ -137,7 +174,13 @@ const Workspace = () => {
           localStorage.removeItem(SESSION_STORAGE_KEY);
         }
       }
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(`${SCHEMA_STORAGE_PREFIX}${sessionToDelete}`);
+      }
       await queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["schema", sessionToDelete],
+      });
     } catch (error) {
       console.error("Failed to delete session", error);
       toast({
@@ -172,12 +215,16 @@ const Workspace = () => {
         onVisualize={handleVisualizerToggle}
         onDeleteSession={handleDeleteSession}
         deletingSessionId={deletingSessionId}
+        schemaTables={schemaTables}
+        isSchemaLoading={schemaInitialLoading}
       />
       {showVisualizer && (
         <div className="fixed inset-0 z-50 bg-background">
           <DatabaseVisualizer
             sessionId={activeSession}
             onBack={closeVisualizer}
+            tables={schemaTables}
+            isLoading={schemaInitialLoading}
           />
         </div>
       )}

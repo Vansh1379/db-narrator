@@ -8,8 +8,10 @@ import LeftRail from "./LeftRail";
 import SchemaViewer from "./SchemaViewer";
 import ChatPane from "./ChatPane";
 import type { SessionsResponse } from "@/lib/api";
+import type { SchemaResponse } from "@/lib/api";
 
 type SessionSummary = SessionsResponse["sessions"][number];
+type SchemaTables = SchemaResponse["tables"];
 
 interface WorkspaceLayoutProps {
   sessionId: string;
@@ -20,6 +22,8 @@ interface WorkspaceLayoutProps {
   onVisualize?: () => void;
   onDeleteSession: (sessionId: string) => void;
   deletingSessionId?: string | null;
+  schemaTables?: SchemaTables;
+  isSchemaLoading: boolean;
 }
 
 const WorkspaceLayout = ({
@@ -31,6 +35,8 @@ const WorkspaceLayout = ({
   onVisualize,
   onDeleteSession,
   deletingSessionId,
+  schemaTables,
+  isSchemaLoading,
 }: WorkspaceLayoutProps) => {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
@@ -107,7 +113,11 @@ const WorkspaceLayout = ({
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-96 p-0">
-              <SchemaViewer sessionId={sessionId} />
+              <SchemaViewer
+                sessionId={sessionId}
+                tables={schemaTables}
+                isLoading={isSchemaLoading}
+              />
             </SheetContent>
           </Sheet>
 
@@ -145,7 +155,11 @@ const WorkspaceLayout = ({
 
         {/* Right Rail - Desktop Only */}
         <aside className="hidden md:block w-96 border-l border-border overflow-y-auto">
-          <SchemaViewer sessionId={sessionId} />
+          <SchemaViewer
+            sessionId={sessionId}
+            tables={schemaTables}
+            isLoading={isSchemaLoading}
+          />
         </aside>
       </div>
 
