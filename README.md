@@ -240,16 +240,3 @@ The frontend lives in `Frontend/` and is built with Vite.
    - Upload through the workspace card.
    - Inspect generated `databases/` directory under `backend/` for session artifacts.
 
----
-
-## Next Steps
-
-- **Live DB connections** – Extend upload flow to accept connection strings for Postgres/MySQL.
-- **Advanced charting** – Detect time-series vs categorical data for better default chart choices.
-- **Query history & saved insights** – Currently placeholders in the UI; connect them to persistent storage.
-- **Team collaboration** – Share sessions with other authenticated users.
-- **Observability** – Hook up logging / error tracking and improve monitoring for query execution.
-
----
-
-If you have questions or want to contribute, please open an issue or ping the maintainers. Happy narrating your data! 📊✨
