@@ -67,7 +67,7 @@ const mapSchemaTable = (table: SchemaTable): TableInfo => {
       from: `${table.name}.${fk.from}`,
       to: `${fk.table}.${fk.to}`,
       description: `ON UPDATE ${fk.onUpdate}, ON DELETE ${fk.onDelete}`,
-    }),
+    })
   );
 
   const sampleRows = (table.sampleRows ?? []).map((row) => {
@@ -78,7 +78,7 @@ const mapSchemaTable = (table: SchemaTable): TableInfo => {
         typeof value === "number" ||
         value === null
       ) {
-        normalized[key] = value;
+        normalized[key] = value as string | number | null;
       } else {
         normalized[key] = value === undefined ? null : String(value);
       }
@@ -109,17 +109,28 @@ const DatabaseVisualizer = ({
 }: DatabaseVisualizerProps) => {
   const tableInfos = useMemo(
     () => (tables && tables.length ? tables.map(mapSchemaTable) : []),
-    [tables],
+    [tables]
   );
 
   const showInitialLoading = isLoading && tableInfos.length === 0;
 
   const [search, setSearch] = useState("");
   const [selectedTable, setSelectedTable] = useState<string>(
-    tableInfos[0]?.name ?? "",
+    tableInfos[0]?.name ?? ""
   );
-  const [activeTab, setActiveTab] =
-    useState<"structure" | "relationships" | "sample">("structure");
+  const [activeTab, setActiveTab] = useState<
+    "structure" | "relationships" | "sample"
+  >("structure");
+
+  const handleTabChange = (value: string) => {
+    if (
+      value === "structure" ||
+      value === "relationships" ||
+      value === "sample"
+    ) {
+      setActiveTab(value);
+    }
+  };
 
   useEffect(() => {
     setSelectedTable(tableInfos[0]?.name ?? "");
@@ -133,8 +144,8 @@ const DatabaseVisualizer = ({
       (table) =>
         table.name.toLowerCase().includes(query) ||
         table.columns.some((column) =>
-          column.name.toLowerCase().includes(query),
-        ),
+          column.name.toLowerCase().includes(query)
+        )
     );
   }, [search, tableInfos]);
 
@@ -152,16 +163,25 @@ const DatabaseVisualizer = ({
       <header className="border-b border-border animate-fade-in-up">
         <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="gap-2" onClick={onBack}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={onBack}
+            >
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
             <div className="flex items-center gap-2">
               <Database className="h-5 w-5 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Session {sessionId}</p>
+                <p className="text-sm text-muted-foreground">
+                  Session {sessionId}
+                </p>
                 <h1 className="text-lg font-semibold">
-                  {tableInfos.length ? `Session ${sessionId.slice(0, 8)}…` : "No schema loaded"}
+                  {tableInfos.length
+                    ? `Session ${sessionId.slice(0, 8)}…`
+                    : "No schema loaded"}
                 </h1>
               </div>
             </div>
@@ -223,7 +243,9 @@ const DatabaseVisualizer = ({
                         <Columns className="h-4 w-4 text-muted-foreground" />
                         {candidate.name}
                       </span>
-                      <Badge variant="outline">{candidate.columns.length}</Badge>
+                      <Badge variant="outline">
+                        {candidate.columns.length}
+                      </Badge>
                     </Button>
                   ))}
                 </div>
@@ -251,13 +273,16 @@ const DatabaseVisualizer = ({
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <CardTitle className="flex items-center gap-3">
-                        <span className="text-xl font-semibold">{table.name}</span>
+                        <span className="text-xl font-semibold">
+                          {table.name}
+                        </span>
                         <Badge variant="secondary">
                           {rowCount.toLocaleString()} rows
                         </Badge>
                       </CardTitle>
                       <CardDescription>
-                        Columns, relationships, and sample rows captured during ingestion.
+                        Columns, relationships, and sample rows captured during
+                        ingestion.
                       </CardDescription>
                     </div>
                   </div>
@@ -266,7 +291,7 @@ const DatabaseVisualizer = ({
 
               <Tabs
                 value={activeTab}
-                onValueChange={setActiveTab}
+                onValueChange={handleTabChange}
                 className="w-full"
               >
                 <TabsList className="mb-4">
@@ -283,48 +308,58 @@ const DatabaseVisualizer = ({
                         Inspect column definitions and constraints.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="rounded-xl border border-border p-0">
                       {columns.length ? (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Column</TableHead>
-                              <TableHead>Type</TableHead>
-                              <TableHead>Constraints</TableHead>
-                              <TableHead>Default</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {columns.map((column) => (
-                              <TableRow key={column.name}>
-                                <TableCell className="font-mono text-sm">
-                                  {column.name}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="outline" className="font-mono">
-                                    {column.type}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="space-x-2">
-                                  {!column.nullable && (
-                                    <Badge variant="secondary">NOT NULL</Badge>
-                                  )}
-                                  {column.pk && (
-                                    <Badge variant="secondary" className="gap-1">
-                                      <Hash className="h-3 w-3" />
-                                      Primary
-                                    </Badge>
-                                  )}
-                                </TableCell>
-                                <TableCell className="font-mono text-xs text-muted-foreground">
-                                  {column.defaultValue ?? "—"}
-                                </TableCell>
+                        <div className="h-[320px] w-full overflow-auto">
+                          <Table className="min-w-max">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Column</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Constraints</TableHead>
+                                <TableHead>Default</TableHead>
                               </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                            </TableHeader>
+                            <TableBody>
+                              {columns.map((column) => (
+                                <TableRow key={column.name}>
+                                  <TableCell className="font-mono text-sm">
+                                    {column.name}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      variant="outline"
+                                      className="font-mono"
+                                    >
+                                      {column.type}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="space-x-2">
+                                    {!column.nullable && (
+                                      <Badge variant="secondary">
+                                        NOT NULL
+                                      </Badge>
+                                    )}
+                                    {column.pk && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="gap-1"
+                                      >
+                                        <Hash className="h-3 w-3" />
+                                        Primary
+                                      </Badge>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-xs text-muted-foreground">
+                                    {column.defaultValue ?? "—"}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="p-4 text-sm text-muted-foreground">
                           No column metadata available for this table.
                         </p>
                       )}
@@ -352,9 +387,15 @@ const DatabaseVisualizer = ({
                                 <LinkIcon className="h-3 w-3" />
                                 Foreign key
                               </Badge>
-                              <span className="font-mono text-sm">{relation.from}</span>
-                              <span className="text-muted-foreground text-sm">→</span>
-                              <span className="font-mono text-sm">{relation.to}</span>
+                              <span className="font-mono text-sm">
+                                {relation.from}
+                              </span>
+                              <span className="text-muted-foreground text-sm">
+                                →
+                              </span>
+                              <span className="font-mono text-sm">
+                                {relation.to}
+                              </span>
                             </div>
                             <p className="text-sm text-muted-foreground">
                               {relation.description}
@@ -378,14 +419,17 @@ const DatabaseVisualizer = ({
                         Preview of sampled rows captured during ingestion.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="overflow-hidden rounded-xl border border-border">
+                    <CardContent className="rounded-xl border border-border p-0">
                       {sampleRows.length ? (
-                        <ScrollArea className="h-[260px]">
-                          <Table>
+                        <div className="h-[320px] w-full overflow-auto">
+                          <Table className="min-w-max">
                             <TableHeader>
                               <TableRow>
                                 {Object.keys(sampleRows[0]).map((column) => (
-                                  <TableHead key={column} className="font-semibold">
+                                  <TableHead
+                                    key={column}
+                                    className="font-semibold"
+                                  >
                                     {column}
                                   </TableHead>
                                 ))}
@@ -394,20 +438,25 @@ const DatabaseVisualizer = ({
                             <TableBody>
                               {sampleRows.map((row, rowIndex) => (
                                 <TableRow key={rowIndex}>
-                                  {Object.entries(row).map(([column, value]) => (
-                                    <TableCell key={column} className="font-mono text-sm">
-                                      {value === null || value === undefined
-                                        ? "—"
-                                        : String(value)}
-                                    </TableCell>
-                                  ))}
+                                  {Object.entries(row).map(
+                                    ([column, value]) => (
+                                      <TableCell
+                                        key={column}
+                                        className="max-w-xs truncate whitespace-nowrap font-mono text-sm"
+                                      >
+                                        {value === null || value === undefined
+                                          ? "—"
+                                          : String(value)}
+                                      </TableCell>
+                                    )
+                                  )}
                                 </TableRow>
                               ))}
                             </TableBody>
                           </Table>
-                        </ScrollArea>
+                        </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="p-4 text-sm text-muted-foreground">
                           No sample rows captured yet.
                         </p>
                       )}
@@ -439,4 +488,3 @@ const DatabaseVisualizer = ({
 };
 
 export default DatabaseVisualizer;
-
