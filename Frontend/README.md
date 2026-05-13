@@ -58,7 +58,7 @@ This document is the primary reference for working on the frontend — it covers
 │  └──────────────┘   └──────────────┘   └──────────────────────┘ │
 │         │                  │                      │             │
 │         ▼                  ▼                      ▼             │
-│              react-router + Clerk <SignedIn/Out>                │
+│        react-router + ProtectedRoute (SignedIn/Out)             │
 │                              │                                  │
 │                              ▼                                  │
 │            TanStack Query  ⇄  src/lib/api.ts (fetch)            │
@@ -91,8 +91,8 @@ Frontend/
 │   ├── favicon.ico
 │   └── robots.txt
 ├── src/
-│   ├── App.tsx                  # Router + providers (QueryClient, Theme, Toaster, Clerk)
-│   ├── main.tsx                 # Bootstraps React, wraps app in <ClerkProvider>
+│   ├── App.tsx                  # Router + providers (ClerkProvider, QueryClient, Theme, Toaster)
+│   ├── main.tsx                 # React bootstrap (renders <App />)
 │   ├── index.css                # Tailwind layers + design-system CSS variables
 │   ├── components/
 │   │   ├── NavLink.tsx
@@ -143,11 +143,13 @@ Frontend/
 | `/demo`      | `Demo.tsx`      | Public   | Walkthrough of the workspace using bundled mock data — no backend required.                    |
 | `/sign-in/*` | `SignIn.tsx`    | Public   | Clerk-hosted sign-in flow.                                                                     |
 | `/sign-up/*` | `SignUp.tsx`    | Public   | Clerk-hosted sign-up flow.                                                                     |
-| `/workspace` | `Workspace.tsx` | Required | Upload SQL, manage sessions, explore schema, chat. Wrapped in Clerk `<SignedIn>`.              |
-| `/visualizer/:sessionId` | `DatabaseVisualizer.tsx` (page mode) | Required | Full-screen schema explorer with structure / relationships / sample-rows tabs. |
+| `/workspace` | `Workspace.tsx` | Required | Upload SQL, manage sessions, explore schema, chat. Wrapped in `<ProtectedRoute>`.              |
+| `/workspace/:sessionId` | `Workspace.tsx` | Required | Same as above, deep-linked to a specific session.                                  |
 | `*`          | `NotFound.tsx`  | Public   | 404 fallback.                                                                                  |
 
-Routing is configured in `App.tsx`. Protected routes use `<SignedIn>` / `<SignedOut>` from `@clerk/clerk-react`; `<SignedOut>` paths redirect via `<RedirectToSignIn />`.
+Routing is configured in `App.tsx`. Protected routes are wrapped in a local `ProtectedRoute` component that renders `<SignedIn>{children}</SignedIn>` and falls back to `<SignedOut><Navigate to="/sign-in" replace /></SignedOut>` for unauthenticated users.
+
+The schema visualizer is **not** a separate route — it is toggled inside `Workspace.tsx` via local state (`showVisualizer`) and overlays the workspace.
 
 ---
 
@@ -173,11 +175,11 @@ Drag-and-drop `.sql` upload (powered by `react-dropzone`). Streams progress, sur
 
 ### `SchemaViewer.tsx`
 
-Compact in-workspace schema overview: table list with column counts, click-to-expand columns and FKs, and a “Open visualizer” button that routes to `/visualizer/:sessionId` for the full-screen experience.
+Compact in-workspace schema overview: table list with column counts, click-to-expand columns and FKs, and an “Open visualizer” button that flips `showVisualizer` in `Workspace.tsx` to overlay the full-screen explorer.
 
 ### `DatabaseVisualizer.tsx`
 
-Full-screen schema explorer used both inside the workspace and as a dedicated page. Three tabs:
+Full-screen schema explorer rendered as an overlay inside the workspace. Three tabs:
 
 - **Structure** — column name, type, constraints (`NOT NULL`, `PRIMARY KEY`), defaults.
 - **Relationships** — foreign keys rendered as `from → to` with `ON UPDATE` / `ON DELETE` metadata.
@@ -203,14 +205,7 @@ Paginated, sortable data grid with cell truncation, copy-to-clipboard, and CSV-f
 
 ### `ChartCard.tsx`
 
-Auto-selects a chart type from the result shape:
-
-- 1 categorical + 1 numeric → bar chart
-- date/time + numeric → line chart
-- 2 numerics → scatter
-- otherwise → falls back to table-only
-
-Built on `recharts` with theme-aware colors pulled from CSS variables.
+Renders the backend-suggested chart (`bar | line | pie`) with `xKey` / `yKey` from `chartData`, and lets the user switch type via toolbar buttons. Built on `recharts`, with palette colors pulled from CSS variables (`--chart-1` … `--chart-5`).
 
 ---
 
@@ -219,7 +214,7 @@ Built on `recharts` with theme-aware colors pulled from CSS variables.
 All backend calls go through this single module so authentication, base URL, and error handling stay consistent.
 
 - **Base URL** — `import.meta.env.VITE_API_BASE_URL`, falling back to `http://localhost:5001` for local dev.
-- **Auth** — every request adds `Authorization: Bearer <token>` where the token is fetched lazily from Clerk via `window.Clerk.session.getToken()`. Public endpoints (none today) would simply skip the header.
+- **Auth** — every request adds `Authorization: Bearer <token>`. Each API function takes an `AuthGetter` (`() => Promise<string | null>`) as its first argument; callers obtain it from Clerk’s `useAuth().getToken`. Requests can opt out via `requiresAuth: false` (none currently do).
 - **Errors** — non-2xx responses throw `ApiError` (subclass of `Error`) carrying `statusCode` and the parsed body so callers can branch on `err.statusCode`.
 - **JSON safety** — responses are parsed once; empty bodies are tolerated.
 
@@ -233,26 +228,39 @@ All backend calls go through this single module so authentication, base URL, and
 | POST   | `/api/query/:sessionId`    | NL question → `{ sql, explanation, rows, chartData, … }` |
 | DELETE | `/api/sessions/:sessionId` | Delete a session and its DB                              |
 
-Response shape for `POST /api/query/:sessionId`:
+Response shape for `POST /api/query/:sessionId` (see `QueryResponse` in `src/lib/api.ts`):
 
 ```ts
-type QueryResponse = {
+interface QueryResponse {
   sql: string;
   explanation: string;
-  rows: Record<string, string | number | null>[];
-  chartData?: { type: "bar" | "line" | "scatter"; x: string; y: string }[];
-  sources?: { table: string; reason: string }[];
-  confidence: number;          // 0..1
-  executionTimeMs: number;
-};
+  rows: Record<string, unknown>[];
+  totalRows?: number;
+  executionTime?: number;
+  chartData?: {
+    type: "bar" | "line" | "pie";
+    xKey: string;
+    yKey: string;
+    data?: Record<string, unknown>[];
+  };
+  sources: Array<{
+    id: string;
+    type?: string;
+    text: string;
+    score?: number;
+    meta?: Record<string, unknown>;
+  }>;
+  confidence?: number;
+  tables_used?: string[];
+}
 ```
 
 ---
 
 ## Authentication (Clerk)
 
-- `main.tsx` wraps the app in `<ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>`.
-- Protected routes use `<SignedIn>` / `<SignedOut>` guards.
+- `App.tsx` wraps the tree in `<ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>`; the app throws at startup if the key is missing.
+- Protected routes use a local `ProtectedRoute` component that combines `<SignedIn>` with a `<SignedOut><Navigate to="/sign-in" /></SignedOut>` fallback.
 - Tokens for backend calls are obtained per-request — no manual refresh logic, no token stored in `localStorage`.
 - Sign-in and sign-up are routed through Clerk’s prebuilt components (`SignIn.tsx`, `SignUp.tsx`); custom flows can be added later if needed.
 
@@ -265,7 +273,7 @@ To run the app you **must** provide a valid `VITE_CLERK_PUBLISHABLE_KEY`. Withou
 | Concern                  | Where it lives                                          |
 | ------------------------ | ------------------------------------------------------- |
 | Sessions list, schema, query results | TanStack Query cache (in-memory)            |
-| Active `sessionId`       | `localStorage` key `db-narrator:active-session`         |
+| Active `sessionId`       | `localStorage` key `dbNarratorActiveSession`            |
 | Panel sizes              | `localStorage` (handled by `react-resizable-panels`)    |
 | Theme                    | `localStorage` via `next-themes`                        |
 | Auth tokens              | Managed by Clerk (HttpOnly cookie / in-memory)          |
